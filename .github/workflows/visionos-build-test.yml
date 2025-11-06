@@ -9,7 +9,7 @@ on:
 
 jobs:
   test-realitytool:
-    runs-on: macos-latest
+    runs-on: macos-15  # Latest macOS, likely has Swift 6.2+
 
     steps:
     - name: Checkout repository
@@ -28,8 +28,17 @@ jobs:
 
     - name: Test realitytool --help
       run: |
+        echo "=== Testing realitytool ==="
         /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool --help || echo "Help failed"
-      continue-on-error: true
+      continue-on-error: false
+
+    - name: Check realitytool subcommands
+      run: |
+        echo "=== Check if create-schema exists ==="
+        /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool create-schema --help || echo "create-schema failed"
+        echo ""
+        echo "=== Check if compile exists ==="
+        /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool compile --help || echo "compile failed"
 
     - name: List RealityKitContent package
       run: |

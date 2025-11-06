@@ -1,0 +1,76 @@
+name: Test realitytool Exists
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-realitytool:
+    runs-on: macos-latest
+
+    steps:
+    - name: Check macOS version
+      run: |
+        sw_vers
+        echo ""
+
+    - name: Check Xcode version
+      run: |
+        xcode-select -p
+        xcodebuild -version
+        echo ""
+
+    - name: Check if realitytool exists
+      run: |
+        echo "=== realitytool location ==="
+        ls -la /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool || ls -la /Applications/Xcode*.app/Contents/Developer/usr/bin/realitytool || echo "NOT FOUND"
+        echo ""
+
+    - name: Test realitytool --help
+      run: |
+        echo "=== Testing: realitytool --help ==="
+        /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool --help 2>&1 || echo "Failed"
+        echo ""
+
+    - name: Test realitytool create-schema --help
+      run: |
+        echo "=== Testing: realitytool create-schema --help ==="
+        /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool create-schema --help 2>&1 || echo "Failed"
+        echo ""
+
+    - name: Test realitytool compile --help
+      run: |
+        echo "=== Testing: realitytool compile --help ==="
+        /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool compile --help 2>&1 || echo "Failed"
+        echo ""
+
+    - name: Test ModuleWithDependencies.json (create sample)
+      run: |
+        echo "=== Creating sample ModuleWithDependencies.json ==="
+        cat > /tmp/ModuleWithDependencies.json << 'EOF'
+{
+  "module": {
+    "moduleName": "TestModule",
+    "swiftFiles": []
+  }
+}
+EOF
+        cat /tmp/ModuleWithDependencies.json
+        echo ""
+
+    - name: Try to run realitytool create-schema
+      run: |
+        echo "=== Attempting: realitytool create-schema (with sample input) ==="
+        /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool create-schema \
+          --output-schema /tmp/test-schema.usda \
+          /tmp/ModuleWithDependencies.json \
+          2>&1 || echo "Command failed (expected - requires proper setup)"
+        echo ""
+
+    - name: List result
+      run: |
+        echo "=== Checking if schema was created ==="
+        ls -la /tmp/test-schema.usda 2>/dev/null || echo "Schema file not created"
