@@ -45,6 +45,11 @@ def Xform "Root"
             prepend references = @Ground/Ground.usda@
         )
         {
+            def RealityKitCustomComponent "RealityKitContent_MyCustomComponent"
+            {
+                int count = 42
+                uniform token info:id = "RealityKitContent.MyCustomComponent"
+            }
         }
     }
 }
