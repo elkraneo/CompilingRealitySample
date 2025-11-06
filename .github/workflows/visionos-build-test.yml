@@ -1,0 +1,77 @@
+name: visionOS Reality Composer Pro Build Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-realitytool:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Check Xcode installation
+      run: |
+        echo "Xcode path:"
+        xcode-select -p
+        echo ""
+        echo "Xcode version:"
+        xcodebuild -version
+        echo ""
+        echo "realitytool location:"
+        ls -la /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool || echo "NOT FOUND"
+
+    - name: Test realitytool --help
+      run: |
+        /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool --help || echo "Help failed"
+      continue-on-error: true
+
+    - name: List RealityKitContent package
+      run: |
+        echo "=== Package Contents ==="
+        ls -la "Packages/RealityKitContent/Sources/RealityKitContent/" || echo "Package not found"
+        echo ""
+        echo "=== Look for MyCustomComponent.swift ==="
+        find "Packages/RealityKitContent/Sources/RealityKitContent/" -name "*.swift" -type f || echo "No Swift files"
+
+    - name: Build the project
+      run: |
+        echo "=== Building CompilingRealitySample ==="
+        xcodebuild -project CompilingRealitySample.xcodeproj \
+                   -scheme CompilingRealitySample \
+                   -configuration Debug \
+                   -destination 'generic/platform=visionOS' \
+                   -verbose \
+                   clean build 2>&1 | tee build.log
+
+    - name: Extract realitytool commands from build log
+      run: |
+        echo "=== Searching for realitytool invocations ==="
+        grep -n "realitytool" build.log || echo "No realitytool found in logs"
+        echo ""
+        echo "=== Searching for RealityAssetsSchemaGen ==="
+        grep -n "RealityAssetsSchemaGen" build.log || echo "Not found"
+        echo ""
+        echo "=== Searching for RealityAssetsCompile ==="
+        grep -n "RealityAssetsCompile" build.log || echo "Not found"
+
+    - name: Find generated schema file
+      run: |
+        echo "=== Looking for schema file ==="
+        find ~/Library/Developer/Xcode/DerivedData -name "CustomComponentUSDInitializers.usda" 2>/dev/null | head -5 || echo "Schema file not found in DerivedData"
+        echo ""
+        echo "=== Look in build log for schema location ==="
+        grep "CustomComponentUSDInitializers" build.log || echo "Schema reference not in build log"
+
+    - name: Upload build log
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: build-log
+        path: build.log
+        retention-days: 30
