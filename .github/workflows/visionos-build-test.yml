@@ -16,29 +16,36 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Check Xcode installation
+      id: xcode-info
       run: |
         echo "Xcode path:"
-        xcode-select -p
+        XCODE_PATH=$(xcode-select -p)
+        echo "XCODE_PATH=$XCODE_PATH"
+        echo "XCODE_PATH=$XCODE_PATH" >> $GITHUB_OUTPUT
         echo ""
         echo "Xcode version:"
         xcodebuild -version
         echo ""
         echo "realitytool location:"
-        ls -la /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool || echo "NOT FOUND"
+        REALTIMETOOL_PATH="$XCODE_PATH/usr/bin/realitytool"
+        echo "REALTIMETOOL_PATH=$REALTIMETOOL_PATH"
+        ls -la "$REALTIMETOOL_PATH" || echo "NOT FOUND"
 
     - name: Test realitytool --help
       run: |
         echo "=== Testing realitytool ==="
-        /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool --help || echo "Help failed"
+        XCODE_PATH="${{ steps.xcode-info.outputs.XCODE_PATH }}"
+        "$XCODE_PATH/usr/bin/realitytool" --help || echo "Help failed"
       continue-on-error: false
 
     - name: Check realitytool subcommands
       run: |
+        XCODE_PATH="${{ steps.xcode-info.outputs.XCODE_PATH }}"
         echo "=== Check if create-schema exists ==="
-        /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool create-schema --help || echo "create-schema failed"
+        "$XCODE_PATH/usr/bin/realitytool" create-schema --help || echo "create-schema failed"
         echo ""
         echo "=== Check if compile exists ==="
-        /Applications/Xcode.app/Contents/Developer/usr/bin/realitytool compile --help || echo "compile failed"
+        "$XCODE_PATH/usr/bin/realitytool" compile --help || echo "compile failed"
 
     - name: List RealityKitContent package
       run: |
